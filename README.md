@@ -16,6 +16,25 @@ This solution follows Azure Functions best practices, with each function defined
 | `summarize_text_activity` | `summarize_text_activity` | `activityTrigger` | Sends extracted text to Azure OpenAI (GPT-3.5-turbo) to generate a summary. |
 | `write_doc_activity` | `write_doc_activity` | `activityTrigger` | Saves the summary as a `.txt` file into the `output/` Blob container. |
 
+```text
+pdf-summarizer-lab2/
+├── starter_function/           # Triggers when a PDF is uploaded to Blob Storage (input/)
+│   └── __init__.py             # Starts the orchestration
+├── orchestrator_function/      # Coordinates the activity steps
+│   └── __init__.py             # Calls analyze → summarize → write
+├── analyze_pdf_activity/       # Extracts raw text from PDF using Azure Form Recognizer
+│   └── __init__.py
+├── summarize_text_activity/    # Sends extracted text to OpenAI for summarization
+│   └── __init__.py
+├── write_doc_activity/         # Writes the generated summary to Blob Storage (output/)
+│   └── __init__.py
+├── requirements.txt            # Lists Python packages (azure-functions, openai, etc.)
+├── host.json                   # Global Azure Functions runtime configuration
+├── local.settings.json         # Local environment secrets (not committed)
+├── .gitignore                  # Ignores venv, __pycache__, local.settings.json
+├── venv/                       # Python virtual environment (excluded from version control)
+└── README.md                   # Project documentation and setup instructions
+
 ---
 
 ## How It Works
