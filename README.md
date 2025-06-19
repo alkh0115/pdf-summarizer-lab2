@@ -1,107 +1,132 @@
-<!--
+# Intelligent PDF Summarizer (Azure Durable Functions)
+
+This project is a **serverless PDF summarization pipeline** built with **Azure Durable Functions**, **Cognitive Services**, and **Azure Storage**. The app is designed to automatically extract and summarize content from PDF documents uploaded to a Blob Storage container.
+
 ---
-description: This end-to-end sample shows how implement an intelligent PDF summarizer using Durable Functions. 
-page_type: sample
-products:
-- azure-functions
-- azure
-urlFragment: durable-func-pdf-summarizer
-languages:
-- python
-- bicep
-- azdeveloper
+
+## Project Structure
+
+This solution follows Azure Functions best practices, with each function defined in a **separate folder** for clarity and modularity.
+
+| Folder | Function Name | Type | Description |
+|--------|---------------|------|-------------|
+| `starter_function` | `starter_function` | `blobTrigger` | Triggers when a new PDF is uploaded to the `input/` container. Starts the orchestration. |
+| `orchestrator_function` | `orchestrator_function` | `orchestrationTrigger` | Coordinates the workflow: analyze → summarize → write. |
+| `analyze_pdf_activity` | `analyze_pdf_activity` | `activityTrigger` | Uses Azure Form Recognizer to extract text content from the uploaded PDF. |
+| `summarize_text_activity` | `summarize_text_activity` | `activityTrigger` | Sends extracted text to Azure OpenAI (GPT-3.5-turbo) to generate a summary. |
+| `write_doc_activity` | `write_doc_activity` | `activityTrigger` | Saves the summary as a `.txt` file into the `output/` Blob container. |
+
 ---
--->
 
-# Intelligent PDF Summarizer
-The purpose of this sample application is to demonstrate how Durable Functions can be leveraged to create intelligent applications, particularly in a document processing scenario. Order and durability are key here because the results from one activity are passed to the next. Also, calls to services like Cognitive Service or Azure Open AI can be costly and should not be repeated in the event of failures.
+## How It Works
 
-This sample integrates various Azure services, including Azure Durable Functions, Azure Storage, Azure Cognitive Services, and Azure Open AI.
+1. A PDF is uploaded to the **`input/`** container.
+2. `starter_function` triggers and starts a **Durable Orchestration**.
+3. `orchestrator_function` calls:
+   - `analyze_pdf_activity` to extract raw text using **Form Recognizer**.
+   - `summarize_text_activity` to summarize the text using **Azure OpenAI**.
+   - `write_doc_activity` to store the summary in the **`output/`** container.
+4. The output is saved as `filename-summary.txt`.
 
-The application showcases how PDFs can be ingested and intelligently scanned to determine their content.
+---
 
-![Architecture Diagram](./media/architecture_v2.png)
+## Local Setup
 
-The application's workflow is as follows:
-1.	PDFs are uploaded to a blob storage input container.
-2.	A durable function is triggered upon blob upload.
-- - Downloads the blob (PDF).
-- - Utilizes the Azure Cognitive Service Form Recognizer endpoint to extract the text from the PDF.
-- - Sends the extracted text to Azure Open AI to analyze and determine the content of the PDF.
-- - Save the summary results from Azure Open AI to a new file and upload it to the output blob container.
+### 0. Requirements
+- Python 3.10
+- Azure Functions Core Tools v4
+- Azure Storage Blob SDK
+- Azure OpenAI and Form Recognizer resources
 
-Below, you will find the instructions to set up and run this app locally..
+### 1. Clone the Repository
 
-## Prerequsites
-- [Create an active Azure subscription](https://learn.microsoft.com/en-us/azure/guides/developer/azure-developer-guide#understanding-accounts-subscriptions-and-billing).
-- [Install the latest Azure Functions Core Tools to use the CLI](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
-- Python 3.9 or greater
-- Access permissions to [create Azure OpenAI resources and to deploy models](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control).
-- [Start and configure an Azurite storage emulator for local storage](https://learn.microsoft.com/azure/storage/common/storage-use-azurite).
+```bash
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
+```
 
-## local.settings.json
-You will need to configure a `local.settings.json` file at the root of the repo that looks similar to the below. Make sure to replace the placeholders with your specific values.
+### 2. Create a Virtual Environment
+
+```bash
+python3.10 -m venv venv
+```
+
+Then activate it using:
+
+```bash
+source venv/bin/activate        # For Linux/macOS
+# OR
+.env\Scriptsctivate         # For Windows
+```
+
+### 3. Install Dependencies
+
+Run:
+
+```bash
+pip install -r requirements.txt
+```
+
+Ensure that `azure-functions`, `azure-storage-blob`, and `openai` are included.
+
+### 4. Setup Configuration (`local.settings.json`)
+
+Create a `local.settings.json` file in the root directory with the following:
 
 ```json
 {
+  "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
     "FUNCTIONS_WORKER_RUNTIME": "python",
-    "BLOB_STORAGE_ENDPOINT": "<BLOB-STORAGE-ENDPOINT>",
-    "COGNITIVE_SERVICES_ENDPOINT": "<COGNITIVE-SERVICE-ENDPOINT>",
-    "AZURE_OPENAI_ENDPOINT": "AZURE-OPEN-AI-ENDPOINT>",
-    "AZURE_OPENAI_KEY": "<AZURE-OPEN-AI-KEY>",
-    "CHAT_MODEL_DEPLOYMENT_NAME": "<AZURE-OPEN-AI-MODEL>"
+    "AzureWebJobsStorage": "<your_connection_string>",
+    "STORAGE_ACCOUNT_NAME": "<your_account_name>",
+    "STORAGE_ACCOUNT_KEY": "<your_account_key>",
+    "OPENAI_API_KEY": "<your_openai_key>",
+    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+    "InputContainerName": "input",
+    "OutputContainerName": "output",
+    "COGNITIVE_SERVICES_ENDPOINT": "<your_form_recognizer_endpoint>",
+    "COGNITIVE_SERVICES_KEY": "<your_form_recognizer_key>",
+    "AZURE_OPENAI_ENDPOINT": "<your_azure_openai_endpoint>",
+    "AZURE_OPENAI_KEY": "<your_azure_openai_key>",
+    "CHAT_MODEL_DEPLOYMENT_NAME": "gpt-35-turbo"
   }
 }
 ```
 
-## Running the app locally
-1. Start Azurite: Begin by starting Azurite, the local Azure Storage emulator.
+Replace all placeholders with your actual credentials and endpoints.
 
-2. Install the Requirements: Open your terminal and run the following command to install the necessary packages:
+### 5. Start the Function App
 
-```bash
-python3 -m pip install -r requirements.txt
-```
-3. Create two containers in your storage account. One called `input` and the other called `output`. 
-
-4. Start the Function App: Start the function app to run the application locally.
+Use this command:
 
 ```bash
 func start --verbose
 ```
 
-5. Upload PDFs to the `input` container. That will execute the blob storage trigger in your Durable Function.
+You should see all functions loaded correctly:
+- `starter_function`
+- `orchestrator_function`
+- `analyze_pdf_activity`
+- `summarize_text_activity`
+- `write_doc_activity`
 
-6. After several seconds, your appliation should have finished the orchestrations. Switch to the `output` container and notice that the PDFs have been summarized as new files. 
+### 6. Upload a Test PDF
 
->Note: The summaries may be truncated based on token limit from Azure Open AI. This is intentional as a way to reduce costs. 
+Upload a test file like `sample.pdf` to the `input/` container in your Azure Blob Storage.
 
-## Inspect the code
-This app leverages Durable Functions to orchestrate the application workflow. By using Durable Functions, there's no need for additional infrastructure like queues and state stores to manage task coordination and durability, which significantly reduces the complexity for developers. 
+The summarization pipeline will:
+1. Extract the content using **Form Recognizer**
+2. Send it to **OpenAI** for summarization
+3. Write the result to the `output/` container as `sample-summary.txt`
 
-Take a look at the code snippet below, the `process_document` defines the entire workflow, which consists of a series of steps (activities) that need to be scheduled in sequence. Coordination is key, as the output of one activity is passed as an input to the next. Additionally, Durable Functions handle durability and retries, which ensure that if a failure occurs, such as a transient error or an issue with a dependent service, the workflow can recover gracefully.
+---
+## YouTube demo link
 
-![Orchestration Code](./media/code.png)
 
-## Deploy the app to Azure
 
-Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the app. 
 
-1. In the root of the project, run the following command to provision and deploy the app:
 
-    ```bash
-    azd up
-    ```
 
-1. When prompted, provide:
-   - A name for your [Azure Developer CLI environment](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/faq#what-is-an-environment-name).
-   - The Azure subscription you'd like to use.
-   - The Azure location to use.
 
-Once the azd up command finishes, the app will have successfully provisioned and deployed. 
 
-# Using the app
-To use the app, simply upload a PDF to the Blob Storage `input` container. Once the PDF is transferred, it will be processed using document intelligence and Azure OpenAI. The resulting summary will be saved to a new file and uploaded to the `output` container.
