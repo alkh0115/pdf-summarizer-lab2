@@ -56,7 +56,7 @@ Then activate it using:
 ```bash
 source venv/bin/activate        # For Linux/macOS
 # OR
-.env\Scriptsctivate         # For Windows
+.\venv\Scripts\activate        # For Windows
 ```
 
 ### 3. Install Dependencies
