@@ -34,7 +34,7 @@ pdf-summarizer-lab2/
 ├── .gitignore                  # Ignores venv, __pycache__, local.settings.json
 ├── venv/                       # Python virtual environment (excluded from version control)
 └── README.md                   # Project documentation and setup instructions
-
+```
 ---
 
 ## How It Works
