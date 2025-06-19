@@ -1,0 +1,12 @@
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Azure Functions local settings
+.local.settings.json
+.python_packages/
+.env/
+
+# VS Code settings
+.vscode/
