@@ -1,0 +1,17 @@
+{
+  "bindings": [
+    {
+      "name": "blob",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "input/{name}",
+      "connection": "AzureWebJobsStorage"
+    },
+    {
+      "name": "starter",
+      "type": "orchestrationClient",
+      "direction": "in"
+    }
+  ],
+  "scriptFile": "__init__.py"
+}
