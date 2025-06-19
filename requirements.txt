@@ -13,3 +13,5 @@ requests
 pandas
 numpy
 PyPDF2
+openai
+PyMuPDF==1.23.7
