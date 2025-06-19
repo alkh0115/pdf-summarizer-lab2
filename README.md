@@ -142,10 +142,7 @@ The summarization pipeline will:
 ---
 ## YouTube demo link
 
-
-
-
-
+[https://youtu.be/a6VbK8OMs_Q](https://youtu.be/a6VbK8OMs_Q)
 
 
 
